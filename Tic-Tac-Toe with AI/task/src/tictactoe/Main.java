@@ -1,11 +1,11 @@
 package tictactoe;
 
-import java.util.BitSet;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     final static Scanner scanner = new Scanner(System.in);
     private final static BitSet bitSet = new BitSet();
+    private final static Random random = new Random();
     private static int row = -1;
     private static int col = -1;
     //private static boolean gameOver = false;
@@ -13,58 +13,29 @@ public class Main {
 
 
     public static void main(String[] args) {
-        System.out.print("Enter the cells: ");
-        String inputGrid = scanner.nextLine();
+        //System.out.print("Enter the cells: ");
+        //String inputGrid = scanner.nextLine();
         // We believe that the user enters the grid without error
-        drawGrid(inputGrid);
+        drawGrid();
         boolean repeat = true;
         while (repeat) {
             System.out.print("Enter the coordinates: ");
             String inputStr = scanner.nextLine();
             if (checkCoordinates(inputStr)) {
-                redrawGrid(row, col);
+                repeat = makingPlayerMove();
             }
-            repeat = !findWinner();
+            if (repeat) repeat = makingAiMove();
         }
     }
 
 
-    private static void drawGrid(String inputGrid) {
-        String[] inputGridArray = inputGrid.split("");
-        int k = 0;
+    private static void drawGrid() {
         for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                gridArray[i][j] = inputGridArray[k];
-                k++;
-            }
+            for (int j = 0; j < 3; j++) gridArray[i][j] = " ";
         }
-
         System.out.println("---------");
         for (int i = 0; i < 3; i++) System.out.printf("|%s |%n", drawRow(i));
         System.out.println("---------");
-
-    }
-
-    /**
-     * @param row - row number
-     * @param col - column number
-     */
-    private static void redrawGrid(int row, int col) {
-        int countX = 0;
-        int countO = 0;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (gridArray[i][j].equals("X")) countX++;
-                else if (gridArray[i][j].equals("O")) countO++;
-            }
-        }
-        if (countX == countO) gridArray[row - 1][col - 1] = "X";
-        else gridArray[row - 1][col - 1] = "O";
-
-        System.out.println("---------");
-        for (int i = 0; i < 3; i++) System.out.printf("|%s |%n", drawRow(i));
-        System.out.println("---------");
-
     }
 
     /**
@@ -74,10 +45,52 @@ public class Main {
     private static String drawRow(int row) {
         StringBuilder rowStr = new StringBuilder();
         for (String s : gridArray[row]) {
-            rowStr.append((s.equals("_")) ? "  " : (s.equals("X")) ? " X" : " O");
+            rowStr.append((s.equals(" ")) ? "  " : (s.equals("X")) ? " X" : " O");
         }
         return rowStr.toString();
     }
+
+    private static boolean makingPlayerMove() {
+        gridArray[row - 1][col - 1] = "X";
+        redrawGrid();
+        return findWinner();
+    }
+
+    private static boolean makingAiMove() {
+        System.out.println("Making move level \"easy\"");
+        int k = 0;
+        var freeCells = new ArrayList<Integer>();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (gridArray[i][j].equals(" ")) {
+                    freeCells.add(k);
+                }
+                k++;
+            }
+        }
+        k = 0;
+        int randomInt = freeCells.get(random.nextInt(freeCells.size()));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (k == randomInt) gridArray[i][j] = "O";
+                k++;
+            }
+        }
+        redrawGrid();
+        return findWinner();
+
+    }
+
+    /**
+     * The method redraws the grid after the move is made
+     */
+    private static void redrawGrid() {
+        System.out.println("---------");
+        for (int i = 0; i < 3; i++) System.out.printf("|%s |%n", drawRow(i));
+        System.out.println("---------");
+
+    }
+
 
     /**
      * The method analyzes user input and displays an error message
@@ -109,7 +122,9 @@ public class Main {
                 System.out.println("Coordinates should be from 1 to 3!");
                 return false;
             }
-            if (!gridArray[row - 1][col - 1].equals("_")) {
+
+            if ((gridArray[row - 1][col - 1].equals("X"))
+                    || (gridArray[row - 1][col - 1].equals("O"))) {
                 System.out.println("This cell is occupied! Choose another one!");
                 return false;
             }
@@ -119,18 +134,14 @@ public class Main {
     }
 
     private static boolean findWinner() {
-        if ((checkRow() || checkCol() || checkDiagonals() || !checkAvailableSpace())) return true;
-        else {
-            System.out.println("Game not finished");
-            return false;
-        }
+        return ((checkRow() && checkCol() && checkDiagonals() && checkAvailableSpace()));
     }
 
 
     /**
      * Checks that the row is filled with X or 0
      *
-     * @return true if the row is filled with X or 0
+     * @return the value is true if the line is not filled with Xor 0
      */
     private static boolean checkRow() {
         int s = 0;
@@ -140,7 +151,7 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("X wins");
-                return true;
+                return false;
             }
             bitSet.clear();
             s++;
@@ -152,18 +163,18 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("O wins");
-                return true;
+                return false;
             }
             bitSet.clear();
             s++;
         }
-        return false;
+        return true;
     }
 
     /**
      * Checks that the column is filled with X or 0
      *
-     * @return true if the column is filled with X or 0
+     * @return true if the column is not filled with X or 0
      */
     private static boolean checkCol() {
         int s = 0;
@@ -173,7 +184,7 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("X wins");
-                return true;
+                return false;
             }
             bitSet.clear();
             s++;
@@ -185,12 +196,12 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("O wins");
-                return true;
+                return false;
             }
             bitSet.clear();
             s++;
         }
-        return false;
+        return true;
     }
 
     private static boolean checkDiagonals() {
@@ -200,7 +211,7 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("X wins");
-            return true;
+            return false;
         }
         bitSet.clear();
         for (int i = 0; i < 3; i++) {
@@ -208,7 +219,7 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("O wins");
-            return true;
+            return false;
         }
         bitSet.clear();
 
@@ -219,7 +230,7 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("X wins");
-            return true;
+            return false;
         }
         bitSet.clear();
 
@@ -230,10 +241,10 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("O wins");
-            return true;
+            return false;
         }
         bitSet.clear();
-        return false;
+        return true;
     }
 
     /**
@@ -246,7 +257,7 @@ public class Main {
         int s = 0;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (gridArray[i][j].equals("_")) bitSet.set(s);
+                if (gridArray[i][j].equals(" ")) bitSet.set(s);
                 s++;
             }
         }
