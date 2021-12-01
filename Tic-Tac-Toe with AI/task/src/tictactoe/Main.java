@@ -1,6 +1,7 @@
 package tictactoe;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class Main {
     final static Scanner scanner = new Scanner(System.in);
@@ -8,33 +9,104 @@ public class Main {
     private final static Random random = new Random();
     private static int row = -1;
     private static int col = -1;
-    //private static boolean gameOver = false;
     private final static String[][] gridArray = new String[3][3];
 
 
     public static void main(String[] args) {
-        //System.out.print("Enter the cells: ");
-        //String inputGrid = scanner.nextLine();
-        // We believe that the user enters the grid without error
+        menuManagement();
+
+    }
+
+    /**
+     * The method controls the game menu
+     */
+    private static void menuManagement() {
+        System.out.print("Input command: ");
+        boolean repeat = true;
+        while (repeat) {
+            String startCommand = scanner.nextLine();
+            if (startCommand.equals("exit")) {
+                repeat =  false;
+                break;
+            }
+            else if (startCommand.equals("start easy easy")) playTwoAI();
+            else if (startCommand.equals("start easy user")) playPlayerAndAI("O");
+            else if (startCommand.equals("start user easy")) playPlayerAndAI("X");
+            else if (startCommand.equals("start user user")) playTwoUser();
+            else System.out.println("Bad parameters!");
+            System.out.print("Input command: ");
+
+        }
+   }
+
+   private static void playTwoAI() {
+        //Делаем случайные ходы до тех пор пока не появится признак победы.
+       // Нужно сделать чтобы ходы были то крестиком, то ноликом.
+       drawGrid();
+       boolean repeat = true;
+       String XorO = "X";
+       int count = 1;
+       while (repeat) {
+           repeat = makingAiMove(XorO);
+           if (count % 2 == 0) XorO = "X";
+           else XorO = "O";
+           count ++;
+
+       }
+       clearArray();
+
+   }
+    // Чем ходит пользователь и кто первый ходит
+    private static void playPlayerAndAI(String XorO) {
         drawGrid();
+        boolean repeat = true;
+        // Если ИИ ходит первым то сначала рисуем сетку, затем ИИ делает ход,
+        // затем опрашиваем сканер и делаем ход игрока
+        while (repeat) {
+            if (XorO.equals("X")) {
+                System.out.print("Enter the coordinates: ");
+                String inputStr = scanner.nextLine();
+                if (checkCoordinates(inputStr)) {
+                    repeat = makingPlayerMove("X");
+                    if (repeat) repeat = makingAiMove("O");
+                }
+
+            }
+            else if (XorO.equals("O")) {
+                repeat = makingAiMove("X");
+                System.out.print("Enter the coordinates: ");
+                String inputStr = scanner.nextLine();
+                if (checkCoordinates(inputStr)) {
+                    repeat = makingPlayerMove("O");
+                }
+            }
+        }
+        clearArray();
+    }
+
+    private static void playTwoUser() {
+        drawGrid();
+        String XorO = "X";
+        int count = 1;
         boolean repeat = true;
         while (repeat) {
             System.out.print("Enter the coordinates: ");
             String inputStr = scanner.nextLine();
             if (checkCoordinates(inputStr)) {
-                repeat = makingPlayerMove();
+                repeat = makingPlayerMove(XorO);
+                if (count % 2 == 0) XorO = "X";
+                else XorO = "O";
+                count ++;
             }
-            if (repeat) repeat = makingAiMove();
         }
+        clearArray();
     }
 
 
     private static void drawGrid() {
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) gridArray[i][j] = " ";
-        }
+        clearArray();
         System.out.println("---------");
-        for (int i = 0; i < 3; i++) System.out.printf("|%s |%n", drawRow(i));
+        IntStream.range(0, 3).forEach(x -> System.out.printf("|%s |%n", drawRow(x)));
         System.out.println("---------");
     }
 
@@ -50,13 +122,14 @@ public class Main {
         return rowStr.toString();
     }
 
-    private static boolean makingPlayerMove() {
-        gridArray[row - 1][col - 1] = "X";
+    private static boolean makingPlayerMove(String XorO) {
+        if (XorO.equals("X")) gridArray[row - 1][col - 1] = "X";
+        else if (XorO.equals("O")) gridArray[row - 1][col - 1] = "O";
         redrawGrid();
         return findWinner();
     }
 
-    private static boolean makingAiMove() {
+    private static boolean makingAiMove(String XorO) {
         System.out.println("Making move level \"easy\"");
         int k = 0;
         var freeCells = new ArrayList<Integer>();
@@ -72,7 +145,8 @@ public class Main {
         int randomInt = freeCells.get(random.nextInt(freeCells.size()));
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (k == randomInt) gridArray[i][j] = "O";
+                if ((k == randomInt) && (XorO.equals("O"))) gridArray[i][j] = "O";
+                else if ((k == randomInt) && (XorO.equals("X"))) gridArray[i][j] = "X";
                 k++;
             }
         }
@@ -151,6 +225,7 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("X wins");
+                bitSet.clear();
                 return false;
             }
             bitSet.clear();
@@ -163,6 +238,7 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("O wins");
+                bitSet.clear();
                 return false;
             }
             bitSet.clear();
@@ -184,6 +260,7 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("X wins");
+                bitSet.clear();
                 return false;
             }
             bitSet.clear();
@@ -196,21 +273,23 @@ public class Main {
             }
             if (bitSet.cardinality() == 3) {
                 System.out.println("O wins");
+                bitSet.clear();
                 return false;
             }
             bitSet.clear();
             s++;
         }
+
         return true;
     }
 
     private static boolean checkDiagonals() {
-
         for (int i = 0; i < 3; i++) {
             if (gridArray[i][i].equals("X")) bitSet.set(i);
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("X wins");
+            bitSet.clear();
             return false;
         }
         bitSet.clear();
@@ -219,6 +298,7 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("O wins");
+            bitSet.clear();
             return false;
         }
         bitSet.clear();
@@ -230,6 +310,7 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("X wins");
+            bitSet.clear();
             return false;
         }
         bitSet.clear();
@@ -241,6 +322,7 @@ public class Main {
         }
         if (bitSet.cardinality() == 3) {
             System.out.println("O wins");
+            bitSet.clear();
             return false;
         }
         bitSet.clear();
@@ -257,15 +339,21 @@ public class Main {
         int s = 0;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (gridArray[i][j].equals(" ")) bitSet.set(s);
+                if ((gridArray[i][j].equals("X")) || (gridArray[i][j].equals("O"))) bitSet.set(s);
                 s++;
             }
         }
-        if (bitSet.cardinality() > 0) {
+        if (bitSet.cardinality() < 9) {
             bitSet.clear();
             return true;
         }
+        bitSet.clear();
         System.out.println("Draw");
         return false;
+    }
+    private static void clearArray() {
+        IntStream.range(0, gridArray.length)
+                .forEach(x -> Arrays.setAll(gridArray[x], (index) -> " "));
+
     }
 }
