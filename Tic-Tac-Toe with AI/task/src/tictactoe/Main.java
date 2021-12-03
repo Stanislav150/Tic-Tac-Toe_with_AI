@@ -5,8 +5,9 @@ import java.util.stream.IntStream;
 
 public class Main {
     final static Scanner scanner = new Scanner(System.in);
-    private final static BitSet bitSet = new BitSet();
+    //private final static BitSet bitSet = new BitSet();
     private final static Random random = new Random();
+    private final static String[] testArray = new String[3];
     private static int row = -1;
     private static int col = -1;
     private final static String[][] gridArray = new String[3][3];
@@ -20,6 +21,7 @@ public class Main {
     /**
      * The method controls the game menu
      */
+    @SuppressWarnings(value = "repeat")
     private static void menuManagement() {
         System.out.print("Input command: ");
         boolean repeat = true;
@@ -38,6 +40,7 @@ public class Main {
 
         }
    }
+
 
    private static void playTwoAI() {
         //Делаем случайные ходы до тех пор пока не появится признак победы.
@@ -218,31 +221,17 @@ public class Main {
      * @return the value is true if the line is not filled with Xor 0
      */
     private static boolean checkRow() {
-        int s = 0;
-        while (s < 3) {
-            for (int i = 0; i < 3; i++) {
-                if (gridArray[s][i].equals("X")) bitSet.set(i);
-            }
-            if (bitSet.cardinality() == 3) {
-                System.out.println("X wins");
-                bitSet.clear();
+        for (String[] row : gridArray) {
+            if ((int) Arrays.stream(row).filter(x -> x.equals("X")).count() == 3) {
+                System.out.println("X win");
                 return false;
             }
-            bitSet.clear();
-            s++;
         }
-        s = 0;
-        while (s < 3) {
-            for (int i = 0; i < 3; i++) {
-                if (gridArray[s][i].equals("O")) bitSet.set(i);
-            }
-            if (bitSet.cardinality() == 3) {
-                System.out.println("O wins");
-                bitSet.clear();
+        for (String[] row : gridArray) {
+            if ((int) Arrays.stream(row).filter(x -> x.equals("O")).count() == 3) {
+                System.out.println("O win");
                 return false;
             }
-            bitSet.clear();
-            s++;
         }
         return true;
     }
@@ -256,76 +245,51 @@ public class Main {
         int s = 0;
         while (s < 3) {
             for (int i = 0; i < 3; i++) {
-                if (gridArray[i][s].equals("X")) bitSet.set(i);
+                testArray[i] = gridArray[i][s];
             }
-            if (bitSet.cardinality() == 3) {
-                System.out.println("X wins");
-                bitSet.clear();
+            if ((int) Arrays.stream(testArray).filter(x -> x.equals("X")).count() == 3) {
+                System.out.println("X win");
                 return false;
             }
-            bitSet.clear();
-            s++;
-        }
-        s = 0;
-        while (s < 3) {
-            for (int i = 0; i < 3; i++) {
-                if (gridArray[i][s].equals("O")) bitSet.set(i);
-            }
-            if (bitSet.cardinality() == 3) {
-                System.out.println("O wins");
-                bitSet.clear();
-                return false;
-            }
-            bitSet.clear();
-            s++;
-        }
 
+            if ((int) Arrays.stream(testArray).filter(x -> x.equals("O")).count() == 3) {
+                System.out.println("O win");
+                return false;
+            }
+            s++;
+        }
         return true;
     }
 
     private static boolean checkDiagonals() {
         for (int i = 0; i < 3; i++) {
-            if (gridArray[i][i].equals("X")) bitSet.set(i);
+            testArray[i] = gridArray[i][i];
+
         }
-        if (bitSet.cardinality() == 3) {
-            System.out.println("X wins");
-            bitSet.clear();
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals("X")).count() == 3) {
+            System.out.println("X win");
             return false;
         }
-        bitSet.clear();
-        for (int i = 0; i < 3; i++) {
-            if (gridArray[i][i].equals("O")) bitSet.set(i);
-        }
-        if (bitSet.cardinality() == 3) {
-            System.out.println("O wins");
-            bitSet.clear();
+
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals("O")).count() == 3) {
+            System.out.println("O win");
             return false;
         }
-        bitSet.clear();
 
         int j = 2;
         for (int i = 0; i < 3; i++) {
-            if (gridArray[i][j].equals("X")) bitSet.set(i);
+            testArray[i] = gridArray[i][j];
             j--;
         }
-        if (bitSet.cardinality() == 3) {
-            System.out.println("X wins");
-            bitSet.clear();
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals("X")).count() == 3) {
+            System.out.println("X win");
             return false;
         }
-        bitSet.clear();
 
-        j = 2;
-        for (int i = 0; i < 3; i++) {
-            if (gridArray[i][j].equals("O")) bitSet.set(i);
-            j--;
-        }
-        if (bitSet.cardinality() == 3) {
-            System.out.println("O wins");
-            bitSet.clear();
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals("O")).count() == 3) {
+            System.out.println("O win");
             return false;
         }
-        bitSet.clear();
         return true;
     }
 
@@ -337,23 +301,22 @@ public class Main {
      */
     private static boolean checkAvailableSpace() {
         int s = 0;
+        int[] avaibleSpace = new int[9];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if ((gridArray[i][j].equals("X")) || (gridArray[i][j].equals("O"))) bitSet.set(s);
+                if ((gridArray[i][j].equals("X")) || (gridArray[i][j].equals("O"))) avaibleSpace[s] = 1;
                 s++;
             }
         }
-        if (bitSet.cardinality() < 9) {
-            bitSet.clear();
-            return true;
+        if ((int) Arrays.stream(avaibleSpace).filter(x -> x == 1).count() == 9) {
+            System.out.println("Draw");
+            return false;
         }
-        bitSet.clear();
-        System.out.println("Draw");
-        return false;
+        return true;
     }
     private static void clearArray() {
         IntStream.range(0, gridArray.length)
-                .forEach(x -> Arrays.setAll(gridArray[x], (index) -> " "));
+                .forEach(x -> Arrays.setAll(gridArray[x], (y) -> " "));
 
     }
 }
