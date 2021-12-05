@@ -5,12 +5,13 @@ import java.util.stream.IntStream;
 
 public class Main {
     final static Scanner scanner = new Scanner(System.in);
-    //private final static BitSet bitSet = new BitSet();
     private final static Random random = new Random();
     private final static String[] testArray = new String[3];
     private static int row = -1;
     private static int col = -1;
     private final static String[][] gridArray = new String[3][3];
+
+    enum Difficulty {EASY, MEDIUM}
 
 
     public static void main(String[] args) {
@@ -21,70 +22,220 @@ public class Main {
     /**
      * The method controls the game menu
      */
-    @SuppressWarnings(value = "repeat")
     private static void menuManagement() {
         System.out.print("Input command: ");
-        boolean repeat = true;
-        while (repeat) {
+        boolean result = true;
+        while (result) {
             String startCommand = scanner.nextLine();
-            if (startCommand.equals("exit")) {
-                repeat =  false;
-                break;
+            switch (startCommand) {
+                case "exit":
+                    result = false;
+                    break;
+                case "start easy easy":
+                    playTwoAI(Difficulty.EASY);
+                    System.out.print("Input command: ");
+                    break;
+                case "start medium medium":
+                    playTwoAI(Difficulty.MEDIUM);
+                    System.out.print("Input command: ");
+                    break;
+                case "start easy user":
+                    playPlayerAndAI("O", Difficulty.EASY);
+                    System.out.print("Input command: ");
+                    break;
+                case "start user easy":
+                    playPlayerAndAI("X", Difficulty.EASY);
+                    System.out.print("Input command: ");
+                    break;
+                case "start medium user":
+                    playPlayerAndAI("O", Difficulty.MEDIUM);
+                    System.out.print("Input command: ");
+                    break;
+                case "start user medium":
+                    playPlayerAndAI("X", Difficulty.MEDIUM);
+                    System.out.print("Input command: ");
+                    break;
+                case "start user user":
+                    playTwoUser();
+                    System.out.print("Input command: ");
+                    break;
+                default:
+                    System.out.println("Bad parameters!");
+                    System.out.print("Input command: ");
             }
-            else if (startCommand.equals("start easy easy")) playTwoAI();
-            else if (startCommand.equals("start easy user")) playPlayerAndAI("O");
-            else if (startCommand.equals("start user easy")) playPlayerAndAI("X");
-            else if (startCommand.equals("start user user")) playTwoUser();
-            else System.out.println("Bad parameters!");
-            System.out.print("Input command: ");
-
         }
-   }
+    }
 
 
-   private static void playTwoAI() {
-        //Делаем случайные ходы до тех пор пока не появится признак победы.
-       // Нужно сделать чтобы ходы были то крестиком, то ноликом.
-       drawGrid();
-       boolean repeat = true;
-       String XorO = "X";
-       int count = 1;
-       while (repeat) {
-           repeat = makingAiMove(XorO);
-           if (count % 2 == 0) XorO = "X";
-           else XorO = "O";
-           count ++;
-
-       }
-       clearArray();
-
-   }
-    // Чем ходит пользователь и кто первый ходит
-    private static void playPlayerAndAI(String XorO) {
+    /**
+     * The middle level begins with scanning the playing field and searching for cells for the next move
+     * The scanner should return the cell on which you need to put a cross or a zero.
+     *
+     * @param difficulty the difficulty level of the game.
+     */
+    private static void playTwoAI(Difficulty difficulty) {
         drawGrid();
-        boolean repeat = true;
-        // Если ИИ ходит первым то сначала рисуем сетку, затем ИИ делает ход,
-        // затем опрашиваем сканер и делаем ход игрока
-        while (repeat) {
-            if (XorO.equals("X")) {
-                System.out.print("Enter the coordinates: ");
-                String inputStr = scanner.nextLine();
-                if (checkCoordinates(inputStr)) {
-                    repeat = makingPlayerMove("X");
-                    if (repeat) repeat = makingAiMove("O");
-                }
+        if (difficulty == Difficulty.EASY) {
+            boolean repeat = true;
+            String XorO = "X";
+            int count = 1;
+            while (repeat) {
+                repeat = makingAiMoveEase(XorO, difficulty);
+                if (count % 2 == 0) XorO = "X";
+                else XorO = "O";
+                count++;
 
             }
-            else if (XorO.equals("O")) {
-                repeat = makingAiMove("X");
-                System.out.print("Enter the coordinates: ");
-                String inputStr = scanner.nextLine();
-                if (checkCoordinates(inputStr)) {
-                    repeat = makingPlayerMove("O");
+            clearArray();
+        } else if (difficulty == Difficulty.MEDIUM) {
+            boolean repeat = true;
+            String XorO = "X";
+            int count = 1;
+            while (repeat) {
+                if (scanningGridToComplete(XorO)) repeat = makingAiMoveMedium(XorO, difficulty);
+                else if (oppositeScanGrid(XorO)) repeat = makingAiMoveMedium(XorO, difficulty);
+                else repeat = makingAiMoveEase(XorO, difficulty);
+                if (count % 2 == 0) XorO = "X";
+                else XorO = "O";
+                count++;
+
+            }
+            clearArray();
+        }
+    }
+
+    /**
+     * The method scans the grid by rows, columns and diagonals and returns
+     * the coordinates on which to put a cross or a zero.
+     *
+     * @param XorO determines who will play with a cross and who will play with a zero
+     */
+    private static boolean scanningGridToComplete(String XorO) {
+        // Scanning the line
+        int lineIndex = 0;
+        for (String[] rowArray : gridArray) {
+            if ((int) Arrays.stream(rowArray).filter(x -> x.equals(XorO)).count() == 2) {
+                List<String> list = Arrays.asList(rowArray);
+                row = lineIndex;
+                col = list.indexOf(" "); //indexOf returns -1 in case of failure
+                return (col != -1);
+            } else lineIndex++;
+        }
+        // Scanning columns
+        int s = 0;
+        lineIndex = 0;
+        while (s < 3) {
+            for (int i = 0; i < 3; i++) {
+                testArray[i] = gridArray[i][s];
+            }
+            if ((int) Arrays.stream(testArray).filter(x -> x.equals(XorO)).count() == 2) {
+                List<String> list = Arrays.asList(testArray);
+                row = list.indexOf(" "); //indexOf returns -1 in case of failure
+                col = lineIndex;
+                return (row != -1);
+            } else lineIndex++;
+
+            s++;
+        }
+        // Scan the diagonals.
+        for (int i = 0; i < 3; i++) {
+            testArray[i] = gridArray[i][i];
+
+        }
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals(XorO)).count() == 2) {
+            List<String> list = Arrays.asList(testArray);
+            row = list.indexOf(" "); //indexOf returns -1 in case of failure
+            col = row;
+            return (row != -1);
+        }
+        int j = 2;
+        for (int i = 0; i < 3; i++) {
+            testArray[i] = gridArray[i][j];
+            j--;
+        }
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals(XorO)).count() == 2) {
+            List<String> list = Arrays.asList(testArray);
+            row = list.indexOf(" "); //indexOf returns -1 in case of failure
+            col = j + 1;
+            return (row != -1);
+        }
+        return false;
+    }
+
+    /**
+     * If its opponent can win with one move, it plays the move necessary to block this.
+     *
+     * @param XorO determines who will play with a cross and who will play with a zero
+     * @return true if there is such a cell and its coordinates are written in row and col
+     */
+    private static boolean oppositeScanGrid(String XorO) {
+        // Calls scanningGridToComplete(), but we pass the opposite symbol to the method,
+        // if we play for X, then O and vice versa.
+        if (XorO.equals("X")) return (scanningGridToComplete("O"));
+        else if (XorO.equals("O")) return (scanningGridToComplete("X"));
+        return false;
+    }
+
+    /**
+     * @param XorO       determines who will play with a cross and who will play with a zero
+     * @param difficulty определяет сложность игры.
+     */
+    private static void playPlayerAndAI(String XorO, Difficulty difficulty) {
+        drawGrid();
+        if (difficulty == Difficulty.EASY) {
+            boolean repeat = true;
+            // Если ИИ ходит первым то сначала рисуем сетку, затем ИИ делает ход,
+            // затем опрашиваем сканер и делаем ход игрока
+            while (repeat) {
+                if (XorO.equals("X")) {
+                    System.out.print("Enter the coordinates: ");
+                    String inputStr = scanner.nextLine();
+                    if (checkCoordinates(inputStr)) {
+                        repeat = makingPlayerMove("X");
+                        if (repeat) repeat = makingAiMoveEase("O", Difficulty.EASY);
+                    }
+
+                } else if (XorO.equals("O")) {
+                    repeat = makingAiMoveEase("X", Difficulty.EASY);
+                    System.out.print("Enter the coordinates: ");
+                    String inputStr = scanner.nextLine();
+                    if (checkCoordinates(inputStr)) {
+                        repeat = makingPlayerMove("O");
+                    }
                 }
             }
+            clearArray();
+        } else if (difficulty == Difficulty.MEDIUM) {
+            boolean repeat = true;
+            while (repeat) {
+                if (XorO.equals("X")) {
+                    System.out.print("Enter the coordinates: ");
+                    String inputStr = scanner.nextLine();
+                    if (checkCoordinates(inputStr)) {
+                        repeat = makingPlayerMove("X");
+                        if (repeat) {
+                            if (scanningGridToComplete("O")) repeat = makingAiMoveMedium("O", difficulty);
+                            else if (oppositeScanGrid("O")) repeat = makingAiMoveMedium("O", difficulty);
+                            else repeat = makingAiMoveEase("O", difficulty);
+                        }
+                    }
+
+                } else if (XorO.equals("O")) {
+                    if (scanningGridToComplete("X")) repeat = makingAiMoveMedium("X", difficulty);
+                    else if (oppositeScanGrid("X")) repeat = makingAiMoveMedium("X", difficulty);
+                    else repeat = makingAiMoveEase("X", difficulty);
+                    if (repeat) {
+                        System.out.print("Enter the coordinates: ");
+                        String inputStr = scanner.nextLine();
+                        if (checkCoordinates(inputStr)) {
+                            repeat = makingPlayerMove("O");
+                        }
+                    }
+                }
+            }
+            clearArray();
+
         }
-        clearArray();
     }
 
     private static void playTwoUser() {
@@ -99,10 +250,11 @@ public class Main {
                 repeat = makingPlayerMove(XorO);
                 if (count % 2 == 0) XorO = "X";
                 else XorO = "O";
-                count ++;
+                count++;
             }
         }
         clearArray();
+
     }
 
 
@@ -129,11 +281,13 @@ public class Main {
         if (XorO.equals("X")) gridArray[row - 1][col - 1] = "X";
         else if (XorO.equals("O")) gridArray[row - 1][col - 1] = "O";
         redrawGrid();
-        return findWinner();
+        return findWinner(XorO);
     }
 
-    private static boolean makingAiMove(String XorO) {
-        System.out.println("Making move level \"easy\"");
+
+    private static boolean makingAiMoveEase(String XorO, Difficulty difficulty) {
+        if (difficulty == Difficulty.EASY) System.out.println("Making move level \"easy\"");
+        else if (difficulty == Difficulty.MEDIUM) System.out.println("Making move level \"medium\"");
         int k = 0;
         var freeCells = new ArrayList<Integer>();
         for (int i = 0; i < 3; i++) {
@@ -154,8 +308,15 @@ public class Main {
             }
         }
         redrawGrid();
-        return findWinner();
+        return findWinner(XorO);
 
+    }
+
+    private static boolean makingAiMoveMedium(String XorO, Difficulty difficulty) {
+        System.out.println("Making move level \"medium\"");
+        gridArray[row][col] = XorO;
+        redrawGrid();
+        return findWinner(XorO);
     }
 
     /**
@@ -210,26 +371,22 @@ public class Main {
 
     }
 
-    private static boolean findWinner() {
-        return ((checkRow() && checkCol() && checkDiagonals() && checkAvailableSpace()));
+    private static boolean findWinner(String XorO) {
+        return ((checkRow(XorO) && checkCol(XorO) && checkDiagonals(XorO) && checkAvailableSpace()));
     }
 
 
     /**
      * Checks that the row is filled with X or 0
      *
+     * @param XorO determines who makes the move X or O
      * @return the value is true if the line is not filled with Xor 0
      */
-    private static boolean checkRow() {
-        for (String[] row : gridArray) {
-            if ((int) Arrays.stream(row).filter(x -> x.equals("X")).count() == 3) {
-                System.out.println("X win");
-                return false;
-            }
-        }
-        for (String[] row : gridArray) {
-            if ((int) Arrays.stream(row).filter(x -> x.equals("O")).count() == 3) {
-                System.out.println("O win");
+    private static boolean checkRow(String XorO) {
+        for (String[] rowArray : gridArray) {
+            if ((int) Arrays.stream(rowArray).filter(x -> x.equals(XorO)).count() == 3) {
+                if (XorO.equals("X")) System.out.println("X wins");
+                else if (XorO.equals("O")) System.out.println("O wins");
                 return false;
             }
         }
@@ -239,21 +396,18 @@ public class Main {
     /**
      * Checks that the column is filled with X or 0
      *
+     * @param XorO determines who makes the move X or O
      * @return true if the column is not filled with X or 0
      */
-    private static boolean checkCol() {
+    private static boolean checkCol(String XorO) {
         int s = 0;
         while (s < 3) {
             for (int i = 0; i < 3; i++) {
                 testArray[i] = gridArray[i][s];
             }
-            if ((int) Arrays.stream(testArray).filter(x -> x.equals("X")).count() == 3) {
-                System.out.println("X win");
-                return false;
-            }
-
-            if ((int) Arrays.stream(testArray).filter(x -> x.equals("O")).count() == 3) {
-                System.out.println("O win");
+            if ((int) Arrays.stream(testArray).filter(x -> x.equals(XorO)).count() == 3) {
+                if (XorO.equals("X")) System.out.println("X wins");
+                else if (XorO.equals("O")) System.out.println("O win");
                 return false;
             }
             s++;
@@ -261,18 +415,14 @@ public class Main {
         return true;
     }
 
-    private static boolean checkDiagonals() {
+    private static boolean checkDiagonals(String XorO) {
         for (int i = 0; i < 3; i++) {
             testArray[i] = gridArray[i][i];
 
         }
-        if ((int) Arrays.stream(testArray).filter(x -> x.equals("X")).count() == 3) {
-            System.out.println("X win");
-            return false;
-        }
-
-        if ((int) Arrays.stream(testArray).filter(x -> x.equals("O")).count() == 3) {
-            System.out.println("O win");
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals(XorO)).count() == 3) {
+            if (XorO.equals("X")) System.out.println("X wins");
+            else if (XorO.equals("O")) System.out.println("O win");
             return false;
         }
 
@@ -281,13 +431,9 @@ public class Main {
             testArray[i] = gridArray[i][j];
             j--;
         }
-        if ((int) Arrays.stream(testArray).filter(x -> x.equals("X")).count() == 3) {
-            System.out.println("X win");
-            return false;
-        }
-
-        if ((int) Arrays.stream(testArray).filter(x -> x.equals("O")).count() == 3) {
-            System.out.println("O win");
+        if ((int) Arrays.stream(testArray).filter(x -> x.equals(XorO)).count() == 3) {
+            if (XorO.equals("X")) System.out.println("X wins");
+            else if (XorO.equals("O")) System.out.println("O win");
             return false;
         }
         return true;
@@ -314,6 +460,7 @@ public class Main {
         }
         return true;
     }
+
     private static void clearArray() {
         IntStream.range(0, gridArray.length)
                 .forEach(x -> Arrays.setAll(gridArray[x], (y) -> " "));
