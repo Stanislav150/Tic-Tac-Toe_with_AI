@@ -9,7 +9,7 @@ import static tictactoe.Utils.*;
 
 public class Hard extends Medium {
     protected static List<Point> availablePoints;
-    //Создаём переменную для хранения координат и очков доступных клеток
+    //Creating a variable to store the coordinates and points of the available cells
     protected static List<Move> moves;
     protected static List<Move> outMoves;
     public static int numberOfFunctionCalls = 0;
@@ -24,9 +24,9 @@ public class Hard extends Medium {
     }
 
     /**
-     * В классе храним координаты доступных точек и очки
+     * In the class we store the coordinates of the available points and points
      */
-     static class Move {
+    static class Move {
         int score;
         Point point;
 
@@ -52,9 +52,10 @@ public class Hard extends Medium {
     }
 
     /**
-     * Сделать ход, в качестве источника данных класс Point. (перегруженная функция)
-     *  @param XorO       символ игрока, или компьютера
-     * @param point      координаты хода
+     * Make a move, as the data source of the Point class. (overloaded function
+     *
+     * @param XorO  the symbol of the player, or computer
+     * @param point - coordinates
      */
     public static boolean makingAiMoveHard(String XorO, Point point) {
         System.out.println("Making move level \"hard\"");
@@ -67,9 +68,9 @@ public class Hard extends Medium {
     }
 
     /**
-     * Получить доступные состояния ходов
+     * Get available states of moves
      *
-     * @return Возврат доступных точек для хода
+     * @return Returns coordinates of available moves
      */
     public static List<Point> getAvailablePoints() {
         availablePoints = new ArrayList<>();
@@ -85,11 +86,11 @@ public class Hard extends Medium {
 
 
     /**
-     * Вызов метода МиниМакс
+     * Calling the Minimax method
      *
-     * @param depth глубина хода
-     * @param turn очередь ходов игроков
-     * @param XorO каким символом играет игрок
+     * @param depth - depth of player moves
+     * @param turn  the order of the players moves
+     * @param XorO  the symbol with which the move is made
      */
     public static int callMiniMax(int depth, int turn, String XorO) {
         moves = new ArrayList<>();
@@ -121,7 +122,6 @@ public class Hard extends Medium {
 
     public static int miniMax(int depth, int turn, String XorO) {
         //numberOfFunctionCalls++;
-
         if (winning(gridArray, SYMBOL_X)) return 10;
         else if (winning(gridArray, SYMBOL_O)) return -10;
         // List of available points
@@ -133,9 +133,9 @@ public class Hard extends Medium {
             makingMove(move.point, XorO);
             if (turn == 1) {
                 move.score = miniMax(+1, 2, switchPlayers(XorO));
-         } else {
+            } else {
                 move.score = miniMax(+1, 1, switchPlayers(XorO));
-          }
+            }
             gridArray[move.point.x][move.point.y] = EMPTY_SELL;
 
             moves.add(move);
